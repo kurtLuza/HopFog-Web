@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block title %}Users{% endblock %}
+{% block content %}
+
+<div class="table-card">
+    <div class="table-card-header">
+        <i class="fas fa-table me-1"></i> List of Users
+    </div>
+
+    <div class="table-toolbar">
+        <div class="entries-select">
+            <select>
+                <option>10</option>
+                <option>25</option>
+                <option>50</option>
+            </select>
+            entries per page
+        </div>
+
+        <div class="search-box">
+            <input type="text" placeholder="Search...">
+        </div>
+    </div>
+
+    <table class="styled-table">
+        <thead>
+            <tr>
+                <th>Name</th>
+                <th>Position</th>
+                <th>Office</th>
+                <th>Age</th>
+                <th>Start date</th>
+                <th>Salary</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>Tiger Nixon</td>
+                <td>System Architect</td>
+                <td>Edinburgh</td>
+                <td>61</td>
+                <td>2011/04/25</td>
+                <td>$320,800</td>
+            </tr>
+            <tr>
+                <td>Garrett Winters</td>
+                <td>Accountant</td>
+                <td>Tokyo</td>
+                <td>63</td>
+                <td>2011/07/25</td>
+                <td>$170,750</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <div class="table-footer">
+        Showing 1 to 2 of 2 entries
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/2.8.0/Chart.min.js" crossorigin="anonymous"></script>
+<script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
+<script src="{{ url_for('static', path='js/datatables-simple-demo.js') }}"></script> -->
+{% endblock %}
