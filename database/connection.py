@@ -6,7 +6,7 @@ import os
 # Load environment variables
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL")
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./capstone.db")
 
 engine = create_engine(
     DATABASE_URL,
