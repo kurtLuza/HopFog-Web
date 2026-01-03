@@ -79,7 +79,11 @@
 
                 <div class="sb-sidenav-footer">
                     <div class="small">Logged in as:</div>
-                    HopFog User
+                    {% if current_user %}
+                        {{ current_user.username}}
+                    {% else %}
+                        Hopfog User
+                    {% endif %}
                 </div>
             </nav>
         </div>
