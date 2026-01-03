@@ -20,10 +20,10 @@ class User(Base):
     username = Column(String(80), unique=True, nullable=True)
     password_hash = Column(String(255), nullable=False)  # store hash only
     is_active = Column(Integer, default=1, nullable=False)
-
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    sent_messages = relationship("Message", back_populates="sender", cascade="all, delete")
+    sent_messages = relationship("Message", back_populates="sender", foreign_keys="Message.sender_id", cascade="all, delete")
+    received_messages = relationship("MessageRecipient", back_populates="user")
 
 class Role(Base):
     __tablename__ = "roles"
@@ -50,7 +50,7 @@ class Message(Base):
 
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
-    sender = relationship("User", back_populates="sent_messages")
+    sender = relationship("User", back_populates="sent_messages", foreign_keys=[sender_id])
     recipients = relationship("MessageRecipient", back_populates="message", cascade="all, delete")
 
 class MessageRecipient(Base):
@@ -63,3 +63,4 @@ class MessageRecipient(Base):
     read_at = Column(DateTime(timezone=True), nullable=True)
 
     message = relationship("Message", back_populates="recipients")
+    user = relationship("User", back_populates="received_messages")
