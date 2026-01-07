@@ -225,6 +225,25 @@ def delete_message(message_id: int, db: Session = Depends(get_db)):
         return {"message": "Message deleted successfully"}
     return {"error": "Message not found"}
 
+
+@app.delete("/api/users/{user_id}")
+def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(verify_token)):
+    # Find the user
+    user = db.query(User).filter(User.id == user_id).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent deleting yourself
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot delete your own account")
+    
+    # Delete the user
+    db.delete(user)
+    db.commit()
+    
+    return {"message": "User deleted successfully"}
+
 @app.get("/debug/users")
 def debug_users(db: Session = Depends(get_db)):
     users = db.query(User).all()
@@ -234,3 +253,36 @@ def debug_users(db: Session = Depends(get_db)):
         "username": user.username,
         "created_at": user.created_at
     } for user in users]
+
+@app.get("/fog_nodes", response_class=HTMLResponse)
+def fog_nodes(request: Request, db: Session = Depends(get_db), current_user: User = Depends(verify_token)):
+    # This is for connection when the technology is created
+    # For now this is for mock data
+    fog_nodes_data = [
+        {
+            'id': 1,
+            'name': 'Fog_1',
+            'people_connected': 2,
+            'storage_used': '3.9GB',
+            'storage_free': 'free',
+            'status': 'online',
+            'latency': '50ms',
+            'position': {'x': 300, 'y': 200}
+        },
+        {
+            'id': 2,
+            'name': 'Fog_2',
+            'people_connected': 2,
+            'storage_used': '3.9GB',
+            'storage_free': 'free',
+            'status': 'online',
+            'latency': '40ms',
+            'position': {'x': 900, 'y': 200}
+        }
+    ]
+    
+    return templates.TemplateResponse("fog_nodes.html", {
+        "request": request,
+        "current_user": current_user,
+        "fog_nodes": fog_nodes_data
+    })
