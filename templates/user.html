@@ -64,6 +64,8 @@
 
 {% endblock %}
 
+# ...existing code...
+
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
 <script>
@@ -78,7 +80,6 @@
         if (e.target.closest('.view-user-btn')) {
             const userId = e.target.closest('.view-user-btn').getAttribute('data-user-id');
             alert('View user details for ID: ' + userId);
-            // window.location.href = '/users/' + userId;
         }
         
         if (e.target.closest('.delete-user-btn')) {
@@ -87,13 +88,18 @@
                 fetch(`/api/users/${userId}`, {
                     method: 'DELETE',
                 })
-                .then(response => response.json())
+                .then(response => {
+                    if (!response.ok) {
+                        return response.json().then(err => { throw err; });
+                    }
+                    return response.json();
+                })
                 .then(data => {
                     alert('User deleted successfully!');
                     window.location.reload();
                 })
                 .catch(error => {
-                    alert('Error deleting user: ' + error);
+                    alert('Error deleting user: ' + (error.detail || error.message || error));
                 });
             }
         }
