@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Settings{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+    <h1 class="mt-4" style="font-style: italic; color: #333;">Settings</h1>
+    
+    {% if success %}
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        {{ success }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+    
+    {% if error %}
+    <div class="alert alert-danger alert-dismissible fade show" role="alert">
+        {{ error }}
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+    {% endif %}
+    
+    <div class="card mb-4">
+        <div class="card-header" style="background-color: #fff; border-bottom: 2px solid #007bff;">
+            <span style="color: #007bff; font-weight: 500;">Personal Info</span>
+        </div>
+        <div class="card-body">
+            <form id="settingsForm" action="/settings/update" method="POST">
+                <!-- Name Field -->
+                <div class="mb-4">
+                    <label class="form-label text-muted small">Name</label>
+                    <div class="d-flex align-items-center">
+                        <input type="text" 
+                               class="form-control bg-light border-0" 
+                               id="username" 
+                               name="username" 
+                               value="{{ current_user.username }}" 
+                               readonly
+                               style="max-width: 300px;">
+                        <a href="#" class="ms-3 text-primary text-decoration-none edit-btn" data-field="username">Edit</a>
+                    </div>
+                </div>
+                
+                <!-- Email Field -->
+                <div class="mb-4">
+                    <label class="form-label text-muted small">Email</label>
+                    <div class="d-flex align-items-center">
+                        <input type="email" 
+                               class="form-control bg-light border-0" 
+                               id="email" 
+                               name="email" 
+                               value="{{ current_user.email }}" 
+                               readonly
+                               style="max-width: 300px;">
+                        <a href="#" class="ms-3 text-primary text-decoration-none edit-btn" data-field="email">Edit</a>
+                    </div>
+                </div>
+                
+                <!-- Status History -->
+                <div class="mb-4">
+                    <label class="form-label text-muted small">Status history</label>
+                    <div class="d-flex align-items-center">
+                        <span class="form-control bg-light border-0" style="max-width: 200px; display: inline-block;">
+                            {{ current_user.created_at.strftime('%m/%d/%Y') if current_user.created_at else 'N/A' }}
+                        </span>
+                        {% if current_user.is_active %}
+                            <span class="ms-3 text-primary">Activated</span>
+                        {% else %}
+                            <span class="ms-3 text-secondary">Inactive</span>
+                        {% endif %}
+                    </div>
+                </div>
+                
+                <!-- Save Button -->
+                <div class="mt-4">
+                    <button type="submit" class="btn btn-primary px-4" id="saveBtn" style="display: none;">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const editBtns = document.querySelectorAll('.edit-btn');
+    const saveBtn = document.getElementById('saveBtn');
+    
+    editBtns.forEach(btn => {
+        btn.addEventListener('click', function(e) {
+            e.preventDefault();
+            const fieldId = this.getAttribute('data-field');
+            const input = document.getElementById(fieldId);
+            
+            if (input.readOnly) {
+                // Enable editing
+                input.readOnly = false;
+                input.classList.remove('bg-light');
+                input.classList.add('bg-white', 'border');
+                input.focus();
+                this.textContent = 'Cancel';
+                saveBtn.style.display = 'inline-block';
+            } else {
+                // Cancel editing - restore original value
+                input.readOnly = true;
+                input.classList.add('bg-light');
+                input.classList.remove('bg-white', 'border');
+                this.textContent = 'Edit';
+                
+                // Check if any field is still being edited
+                const stillEditing = Array.from(document.querySelectorAll('input[readonly]')).length < 2;
+                if (!stillEditing) {
+                    saveBtn.style.display = 'none';
+                }
+                
+                // Reset to original value
+                location.reload();
+            }
+        });
+    });
+});
+</script>
+{% endblock %}

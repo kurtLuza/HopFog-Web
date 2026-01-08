@@ -132,7 +132,12 @@ async def register_user(
 @app.get("/dashboard", response_class=HTMLResponse)
 def dashboard(request: Request, db: Session = Depends(get_db), current_user: User= Depends(verify_token)):
     Sender = aliased(User)
-    
+
+    fog_nodes_count = 2  # Replace with actual count from your data source
+    people_connected = 5  # Replace with actual count
+    storage_used = "7.8GB"  
+
+
     # Query messages with sender and recipients
     messages_query = db.query(
         Message.id,
@@ -156,11 +161,16 @@ def dashboard(request: Request, db: Session = Depends(get_db), current_user: Use
             'message': msg.body,
             'date': msg.created_at
         })
+
+        
     
     return templates.TemplateResponse("dashboard.html", {
         "request": request,
         "messages": messages,
-        "current_user": current_user
+        "current_user": current_user,
+        "fog_nodes_count": fog_nodes_count,
+        "people_connected": people_connected,
+        "storage_used": storage_used
     })
     
 @app.get("/users", response_class=HTMLResponse)
@@ -205,13 +215,13 @@ def logs(request: Request, db: Session = Depends(get_db), current_user: User = D
     })
 
 
-@app.get("/test-db")
-def test_db():
-    return {"ok": True, "db_file": "capstone.db (SQLite)"}
+# @app.get("/test-db")
+# def test_db():
+#     return {"ok": True, "db_file": "capstone.db (SQLite)"}
 
-@app.get("/db-ping")
-def db_ping(db: Session = Depends(get_db)):
-    return {"db_ok": db.execute(text("SELECT 1")).scalar()}
+# @app.get("/db-ping")
+# def db_ping(db: Session = Depends(get_db)):
+#     return {"db_ok": db.execute(text("SELECT 1")).scalar()}
 
 @app.delete("/api/messages/{message_id}")
 def delete_message(message_id: int, db: Session = Depends(get_db)):
@@ -244,15 +254,15 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User 
     
     return {"message": "User deleted successfully"}
 
-@app.get("/debug/users")
-def debug_users(db: Session = Depends(get_db)):
-    users = db.query(User).all()
-    return [{
-        "id": user.id,
-        "email": user.email,
-        "username": user.username,
-        "created_at": user.created_at
-    } for user in users]
+# @app.get("/debug/users")
+# def debug_users(db: Session = Depends(get_db)):
+#     users = db.query(User).all()
+#     return [{
+#         "id": user.id,
+#         "email": user.email,
+#         "username": user.username,
+#         "created_at": user.created_at
+#     } for user in users]
 
 @app.get("/fog_nodes", response_class=HTMLResponse)
 def fog_nodes(request: Request, db: Session = Depends(get_db), current_user: User = Depends(verify_token)):
@@ -286,3 +296,63 @@ def fog_nodes(request: Request, db: Session = Depends(get_db), current_user: Use
         "current_user": current_user,
         "fog_nodes": fog_nodes_data
     })
+
+
+@app.get("/settings", response_class=HTMLResponse)
+def settings(request: Request, db: Session = Depends(get_db), current_user: User = Depends(verify_token)):
+    return templates.TemplateResponse("settings.html", {
+        "request": request,
+        "current_user": current_user
+    })
+
+
+@app.post("/settings/update", response_class=HTMLResponse)
+async def update_settings(
+    request: Request,
+    username: str = Form(...),
+    email: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(verify_token)
+):
+    error = None
+    success = None
+    old_email = current_user.email
+    
+    # Check if email is already taken by another user
+    existing_user = db.query(User).filter(User.email == email, User.id != current_user.id).first()
+    if existing_user:
+        error = "Email already in use"
+    
+    # Check if username is already taken by another user
+    existing_username = db.query(User).filter(User.username == username, User.id != current_user.id).first()
+    if existing_username:
+        error = "Username already taken"
+    
+    if not error:
+        # Update user
+        current_user.username = username
+        current_user.email = email
+        db.commit()
+        db.refresh(current_user)
+        success = "Profile updated successfully!"
+        
+        # If email changed, create new token and update cookie
+        if email != old_email:
+            new_token = create_access_token(data={"sub": email})
+            response = templates.TemplateResponse("settings.html", {
+                "request": request,
+                "current_user": current_user,
+                "success": success,
+                "error": error
+            })
+            response.set_cookie(key="access_token", value=f"Bearer {new_token}", httponly=True)
+            return response
+    
+    return templates.TemplateResponse("settings.html", {
+        "request": request,
+        "current_user": current_user,
+        "success": success,
+        "error": error
+    })
+
+

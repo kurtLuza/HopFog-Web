@@ -8,18 +8,28 @@
     </ol>
 
     <div class="row">
-        <div class="col-xl-3 col-md-6">
+         <div class="col-xl-3 col-md-6">
             <div class="card bg-primary text-white mb-4">
-                <div class="card-body">Fog Nodes</div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Fog Nodes</span>
+                        <h2 class="mb-0">{{ fog_nodes_count }}</h2>
+                    </div>
+                </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
-                    <a class="small text-white stretched-link" href="#">View Details</a>
+                    <a class="small text-white stretched-link" href="{{ url_for('fog_nodes') }}">View Details</a>
                     <div class="small text-white"><i class="fas fa-angle-right"></i></div>
                 </div>
             </div>
         </div>
         <div class="col-xl-3 col-md-6">
             <div class="card bg-secondary text-white mb-4">
-                <div class="card-body">People Connected</div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>People Connected</span>
+                        <h2 class="mb-0">{{ people_connected }}</h2>
+                    </div>
+                </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     <a class="small text-white stretched-link" href="#">View Details</a>
                     <div class="small text-white"><i class="fas fa-angle-right"></i></div>
@@ -28,7 +38,12 @@
         </div>
         <div class="col-xl-3 col-md-6">
             <div class="card bg-success text-white mb-4">
-                <div class="card-body">Storage</div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>Storage</span>
+                        <h2 class="mb-0">{{ storage_used }}</h2>
+                    </div>
+                </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     <a class="small text-white stretched-link" href="#">View Details</a>
                     <div class="small text-white"><i class="fas fa-angle-right"></i></div>
@@ -37,7 +52,12 @@
         </div>
         <div class="col-xl-3 col-md-6">
             <div class="card bg-danger text-white mb-4">
-                <div class="card-body">SOS & Alert</div>
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <span>SOS & Alert</span>
+                        <h2 class="mb-0">{{ sos_alerts|default(0) }}</h2>
+                    </div>
+                </div>
                 <div class="card-footer d-flex align-items-center justify-content-between">
                     <a class="small text-white stretched-link" href="#">View Details</a>
                     <div class="small text-white"><i class="fas fa-angle-right"></i></div>
