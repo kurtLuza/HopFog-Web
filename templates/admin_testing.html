@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Messaging Testing{% endblock %}
+{% block content %}
+<div class="container-fluid px-4">
+  <h1 class="mt-4">Testing Checklist</h1>
+  <ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a href="/admin/messaging">Admin Messaging</a></li>
+    <li class="breadcrumb-item active">Testing</li>
+  </ol>
+
+  <div class="card mb-4">
+    <div class="card-header"><i class="fas fa-vial me-1"></i>Functional Tests</div>
+    <div class="card-body">
+      <ul class="mb-0">
+        <li>Create Announcement as Draft</li>
+        <li>Queue Announcement and verify it appears in Queue Monitor</li>
+        <li>Create SOS and verify priority ordering</li>
+        <li>Open Broadcast Detail and verify delivery counters</li>
+        <li>Mark Sent (Simulation) and verify Tracking updates</li>
+        <li>Cancel a Broadcast and verify status changes + event log entry</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><i class="fas fa-screwdriver-wrench me-1"></i>Integration Tests (Later)</div>
+    <div class="card-body">
+      <ul class="mb-0">
+        <li>Fog dispatcher pulls QUEUED broadcasts and pushes to IEEE 802.15.4</li>
+        <li>Fog reports delivery ACKs back to update recipient statuses</li>
+        <li>Retry logic + TTL expiry handling</li>
+      </ul>
+    </div>
+  </div>
+</div>
+{% endblock %}

@@ -1,0 +1,89 @@
+{% extends "base.html" %}
+{% block title %}SOS Console{% endblock %}
+{% block content %}
+<div class="container-fluid px-4">
+  <h1 class="mt-4">SOS Console</h1>
+  <ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a href="/admin/messaging">Admin Messaging</a></li>
+    <li class="breadcrumb-item active">SOS</li>
+  </ol>
+
+  <div class="alert alert-danger">
+    <strong>Emergency Mode:</strong> This page is intended for rapid SOS broadcasting. Hardware dispatch will be connected later.
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header"><i class="fas fa-bolt me-1"></i>Quick SOS Templates</div>
+    <div class="card-body">
+      <form method="post" action="/admin/messaging/broadcasts">
+        <input type="hidden" name="msg_type" value="sos">
+        <input type="hidden" name="severity" value="critical">
+        <input type="hidden" name="ttl_hours" value="2">
+        <input type="hidden" name="action" value="queue">
+
+        <div class="row g-2">
+          <div class="col-md-4">
+            <button class="btn btn-danger w-100" name="subject" value="[SOS] Medical Emergency" type="submit"
+              onclick="document.getElementById('sosbody').value='Medical emergency reported. Respond immediately.';">
+              Medical
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-danger w-100" name="subject" value="[SOS] Fire Alert" type="submit"
+              onclick="document.getElementById('sosbody').value='Fire reported. Evacuate and contact responders.';">
+              Fire
+            </button>
+          </div>
+          <div class="col-md-4">
+            <button class="btn btn-danger w-100" name="subject" value="[SOS] Severe Weather" type="submit"
+              onclick="document.getElementById('sosbody').value='Severe weather warning. Stay indoors and monitor updates.';">
+              Weather
+            </button>
+          </div>
+        </div>
+
+        <div class="mt-3">
+          <label class="form-label">SOS Body (editable)</label>
+          <textarea class="form-control" id="sosbody" name="body" rows="4" required>Emergency alert. Please stay safe and follow instructions.</textarea>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-header"><i class="fas fa-list me-1"></i>Recent SOS</div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Severity</th>
+              <th>Subject</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in sos_list %}
+            <tr>
+              <td>{{ s.id }}</td>
+              <td>{{ s.severity }}</td>
+              <td class="text-truncate" style="max-width: 360px;">{{ s.subject }}</td>
+              <td><span class="badge bg-dark">{{ s.status }}</span></td>
+              <td>{{ s.created_at }}</td>
+              <td><a class="btn btn-sm btn-outline-primary" href="/admin/messaging/broadcasts/{{ s.id }}">Open</a></td>
+            </tr>
+            {% endfor %}
+            {% if sos_list|length == 0 %}
+            <tr><td colspan="6" class="text-muted">No SOS broadcasts yet.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}

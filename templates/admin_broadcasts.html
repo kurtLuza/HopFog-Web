@@ -1,0 +1,104 @@
+{% extends "base.html" %}
+{% block title %}Broadcasts{% endblock %}
+{% block content %}
+<div class="container-fluid px-4">
+  <h1 class="mt-4">Broadcasts</h1>
+  <ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a href="/admin/messaging">Admin Messaging</a></li>
+    <li class="breadcrumb-item active">Broadcasts</li>
+  </ol>
+
+  {% if success %}
+  <div class="alert alert-success">{{ success }}</div>
+  {% endif %}
+  {% if error %}
+  <div class="alert alert-danger">{{ error }}</div>
+  {% endif %}
+
+  <div class="row">
+    <div class="col-lg-5">
+      <div class="card mb-4">
+        <div class="card-header"><i class="fas fa-pen-to-square me-1"></i>Create Broadcast</div>
+        <div class="card-body">
+          <div class="small text-muted mb-2">Audience: <strong>All Residents</strong> ({{ resident_count }} recipients)</div>
+          <form method="post" action="/admin/messaging/broadcasts">
+            <div class="mb-3">
+              <label class="form-label">Type</label>
+              <select class="form-select" name="msg_type">
+                <option value="announcement">Announcement</option>
+                <option value="alert">Alert</option>
+                <option value="sos">SOS</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Severity</label>
+              <select class="form-select" name="severity">
+                <option value="info">Info</option>
+                <option value="warning">Warning</option>
+                <option value="critical">Critical</option>
+              </select>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Title / Subject</label>
+              <input class="form-control" name="subject" maxlength="200" required placeholder="e.g., Water Interruption Notice">
+            </div>
+            <div class="mb-3">
+              <label class="form-label">Body</label>
+              <textarea class="form-control" name="body" rows="6" required placeholder="Write your announcement here..."></textarea>
+            </div>
+            <div class="mb-3">
+              <label class="form-label">TTL (hours)</label>
+              <input type="number" class="form-control" name="ttl_hours" value="24" min="1" max="720">
+              <div class="form-text">How long this broadcast remains valid for delivery.</div>
+            </div>
+            <div class="d-flex gap-2">
+              <button class="btn btn-secondary" type="submit" name="action" value="draft">Save Draft</button>
+              <button class="btn btn-primary" type="submit" name="action" value="queue">Queue to Send</button>
+            </div>
+          </form>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-7">
+      <div class="card mb-4">
+        <div class="card-header"><i class="fas fa-list me-1"></i>Recent Broadcasts</div>
+        <div class="card-body">
+          <div class="table-responsive">
+            <table class="table table-striped table-sm align-middle">
+              <thead>
+                <tr>
+                  <th>ID</th>
+                  <th>Type</th>
+                  <th>Severity</th>
+                  <th>Subject</th>
+                  <th>Status</th>
+                  <th>Created</th>
+                  <th></th>
+                </tr>
+              </thead>
+              <tbody>
+                {% for b in broadcasts %}
+                <tr>
+                  <td>{{ b.id }}</td>
+                  <td>{{ b.msg_type }}</td>
+                  <td>{{ b.severity }}</td>
+                  <td class="text-truncate" style="max-width: 260px;">{{ b.subject }}</td>
+                  <td><span class="badge bg-dark">{{ b.status }}</span></td>
+                  <td>{{ b.created_at }}</td>
+                  <td><a class="btn btn-sm btn-outline-primary" href="/admin/messaging/broadcasts/{{ b.id }}">Open</a></td>
+                </tr>
+                {% endfor %}
+                {% if broadcasts|length == 0 %}
+                <tr><td colspan="7" class="text-muted">No broadcasts yet.</td></tr>
+                {% endif %}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+{% endblock %}
