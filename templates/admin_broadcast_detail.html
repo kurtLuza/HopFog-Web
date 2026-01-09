@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+{% block title %}Broadcast #{{ b.id }}{% endblock %}
+{% block content %}
+<div class="container-fluid px-4">
+  <h1 class="mt-4">Broadcast #{{ b.id }}</h1>
+  <ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a href="/admin/messaging">Admin Messaging</a></li>
+    <li class="breadcrumb-item"><a href="/admin/messaging/broadcasts">Broadcasts</a></li>
+    <li class="breadcrumb-item active">#{{ b.id }}</li>
+  </ol>
+
+  {% if success %}<div class="alert alert-success">{{ success }}</div>{% endif %}
+  {% if error %}<div class="alert alert-danger">{{ error }}</div>{% endif %}
+
+  <div class="row">
+    <div class="col-lg-6">
+      <div class="card mb-4">
+        <div class="card-header"><i class="fas fa-circle-info me-1"></i>Details</div>
+        <div class="card-body">
+          <div class="mb-2"><strong>Type:</strong> {{ b.msg_type }}</div>
+          <div class="mb-2"><strong>Severity:</strong> {{ b.severity }}</div>
+          <div class="mb-2"><strong>Status:</strong> <span class="badge bg-dark">{{ b.status }}</span></div>
+          <div class="mb-2"><strong>Audience:</strong> {{ b.audience }}</div>
+          <div class="mb-2"><strong>TTL Expires:</strong> {{ b.ttl_expires_at }}</div>
+          <hr>
+          <div class="mb-2"><strong>Subject:</strong> {{ b.subject }}</div>
+          <div class="mb-2"><strong>Body:</strong></div>
+          <div class="border rounded p-3" style="white-space: pre-wrap;">{{ b.body }}</div>
+
+          <div class="d-flex gap-2 mt-3">
+            <form method="post" action="/admin/messaging/broadcasts/{{ b.id }}/mark_sent">
+              <button class="btn btn-success" type="submit"><i class="fas fa-check me-1"></i>Mark Sent (Simulation)</button>
+            </form>
+            <form method="post" action="/admin/messaging/broadcasts/{{ b.id }}/cancel" onsubmit="return confirm('Cancel this broadcast?');">
+              <button class="btn btn-outline-danger" type="submit"><i class="fas fa-ban me-1"></i>Cancel</button>
+            </form>
+          </div>
+          <div class="form-text mt-2">
+            “Mark Sent” is for UI/demo purposes until we connect the fog/IEEE 802.15.4 dispatcher.
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="col-lg-6">
+      <div class="card mb-4">
+        <div class="card-header"><i class="fas fa-chart-pie me-1"></i>Delivery Summary</div>
+        <div class="card-body">
+          <div class="row text-center">
+            <div class="col-4 mb-3">
+              <div class="h4 mb-0">{{ total }}</div>
+              <div class="text-muted small">Total</div>
+            </div>
+            <div class="col-4 mb-3">
+              <div class="h4 mb-0">{{ status_counts.get('queued', 0) }}</div>
+              <div class="text-muted small">Queued</div>
+            </div>
+            <div class="col-4 mb-3">
+              <div class="h4 mb-0">{{ status_counts.get('sent', 0) }}</div>
+              <div class="text-muted small">Sent</div>
+            </div>
+            <div class="col-4 mb-3">
+              <div class="h4 mb-0">{{ status_counts.get('delivered', 0) }}</div>
+              <div class="text-muted small">Delivered</div>
+            </div>
+            <div class="col-4 mb-3">
+              <div class="h4 mb-0">{{ status_counts.get('read', 0) }}</div>
+              <div class="text-muted small">Read</div>
+            </div>
+            <div class="col-4 mb-3">
+              <div class="h4 mb-0">{{ status_counts.get('failed', 0) }}</div>
+              <div class="text-muted small">Failed</div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card mb-4">
+        <div class="card-header"><i class="fas fa-clock-rotate-left me-1"></i>Event Log</div>
+        <div class="card-body">
+          {% if events and events|length > 0 %}
+          <ul class="list-group list-group-flush">
+            {% for e in events %}
+            <li class="list-group-item">
+              <div class="small text-muted">{{ e.created_at }} — <strong>{{ e.event_type }}</strong></div>
+              <div>{{ e.message }}</div>
+            </li>
+            {% endfor %}
+          </ul>
+          {% else %}
+          <div class="text-muted">No events yet.</div>
+          {% endif %}
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+</div>
+{% endblock %}

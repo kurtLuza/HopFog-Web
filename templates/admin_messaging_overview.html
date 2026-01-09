@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Admin Messaging{% endblock %}
+
+{% block content %}
+<div class="container-fluid px-4">
+  <h1 class="mt-4">Admin Messaging</h1>
+  <ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a href="{{ url_for('dashboard') }}">Dashboard</a></li>
+    <li class="breadcrumb-item active">Admin Messaging</li>
+  </ol>
+
+  <div class="row">
+    <div class="col-xl-4 col-md-6">
+      <div class="card bg-primary text-white mb-4">
+        <div class="card-body">Total Broadcasts: <strong>{{ total }}</strong></div>
+        <div class="card-footer d-flex align-items-center justify-content-between">
+          <a class="small text-white stretched-link" href="/admin/messaging/broadcasts">View Broadcasts</a>
+          <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4 col-md-6">
+      <div class="card bg-warning text-dark mb-4">
+        <div class="card-body">Queued: <strong>{{ queued }}</strong></div>
+        <div class="card-footer d-flex align-items-center justify-content-between">
+          <a class="small text-dark stretched-link" href="/admin/messaging/queue">Queue Monitor</a>
+          <div class="small text-dark"><i class="fas fa-angle-right"></i></div>
+        </div>
+      </div>
+    </div>
+    <div class="col-xl-4 col-md-6">
+      <div class="card bg-secondary text-white mb-4">
+        <div class="card-body">Drafts: <strong>{{ drafts }}</strong></div>
+        <div class="card-footer d-flex align-items-center justify-content-between">
+          <a class="small text-white stretched-link" href="/admin/messaging/broadcasts">Create New</a>
+          <div class="small text-white"><i class="fas fa-angle-right"></i></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header">
+      <i class="fas fa-siren-on me-1"></i> Recent SOS
+    </div>
+    <div class="card-body">
+      {% if recent_sos and recent_sos|length > 0 %}
+      <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Severity</th>
+              <th>Subject</th>
+              <th>Status</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for s in recent_sos %}
+            <tr>
+              <td>{{ s.id }}</td>
+              <td>{{ s.severity|upper }}</td>
+              <td>{{ s.subject }}</td>
+              <td><span class="badge bg-dark">{{ s.status }}</span></td>
+              <td>{{ s.created_at }}</td>
+              <td><a class="btn btn-sm btn-outline-primary" href="/admin/messaging/broadcasts/{{ s.id }}">Open</a></td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+      {% else %}
+      <div class="text-muted">No SOS broadcasts yet.</div>
+      {% endif %}
+    </div>
+  </div>
+
+  <div class="row g-3">
+    <div class="col-md-4">
+      <a class="btn btn-outline-primary w-100" href="/admin/messaging/broadcasts"><i class="fas fa-bullhorn me-2"></i>Broadcasts</a>
+    </div>
+    <div class="col-md-4">
+      <a class="btn btn-outline-warning w-100" href="/admin/messaging/tracking"><i class="fas fa-chart-line me-2"></i>Delivery Tracking</a>
+    </div>
+    <div class="col-md-4">
+      <a class="btn btn-outline-danger w-100" href="/admin/messaging/sos"><i class="fas fa-triangle-exclamation me-2"></i>SOS Console</a>
+    </div>
+  </div>
+</div>
+{% endblock %}

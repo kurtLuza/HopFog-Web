@@ -64,3 +64,67 @@ class MessageRecipient(Base):
 
     message = relationship("Message", back_populates="recipients")
     user = relationship("User", back_populates="received_messages")
+
+
+
+# ---------- ADMIN BROADCAST MESSAGING ----------
+class BroadcastMessage(Base):
+    __tablename__ = "broadcast_messages"
+
+    id = Column(Integer, primary_key=True, index=True)
+    created_by = Column(Integer, ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
+
+    msg_type = Column(String(20), default="announcement", nullable=False)  # announcement/alert/sos
+    severity = Column(String(20), default="info", nullable=False)         # info/warning/critical
+    audience = Column(String(100), default="all_residents", nullable=False)
+
+    subject = Column(String(200), nullable=False)
+    body = Column(Text, nullable=False)
+
+    status = Column(String(20), default="draft", nullable=False)  # draft/queued/sent/failed/cancelled
+    priority = Column(Integer, default=10, nullable=False)        # SOS higher than alert higher than announcement
+    ttl_expires_at = Column(DateTime(timezone=True), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now(), nullable=True)
+
+    recipients = relationship("BroadcastRecipient", back_populates="broadcast", cascade="all, delete-orphan")
+    events = relationship("BroadcastEvent", back_populates="broadcast", cascade="all, delete-orphan")
+
+
+class BroadcastRecipient(Base):
+    __tablename__ = "broadcast_recipients"
+    __table_args__ = (
+        UniqueConstraint("broadcast_id", "user_id", name="uq_broadcast_recipient"),
+    )
+
+    id = Column(Integer, primary_key=True, index=True)
+    broadcast_id = Column(Integer, ForeignKey("broadcast_messages.id", ondelete="CASCADE"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    status = Column(String(20), default="queued", nullable=False)  # queued/sent/delivered/read/failed
+    attempts = Column(Integer, default=0, nullable=False)
+    last_attempt_at = Column(DateTime(timezone=True), nullable=True)
+
+    sent_at = Column(DateTime(timezone=True), nullable=True)
+    delivered_at = Column(DateTime(timezone=True), nullable=True)
+    read_at = Column(DateTime(timezone=True), nullable=True)
+
+    fail_reason = Column(String(255), nullable=True)
+
+    broadcast = relationship("BroadcastMessage", back_populates="recipients")
+    user = relationship("User")
+
+
+class BroadcastEvent(Base):
+    __tablename__ = "broadcast_events"
+
+    id = Column(Integer, primary_key=True, index=True)
+    broadcast_id = Column(Integer, ForeignKey("broadcast_messages.id", ondelete="CASCADE"), nullable=False, index=True)
+
+    event_type = Column(String(50), nullable=False)  # created/queued/sent/cancelled/marked_sent/etc
+    message = Column(String(255), nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+
+    broadcast = relationship("BroadcastMessage", back_populates="events")

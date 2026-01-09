@@ -1,0 +1,85 @@
+{% extends "base.html" %}
+{% block title %}Queue Monitor{% endblock %}
+{% block content %}
+<div class="container-fluid px-4">
+  <h1 class="mt-4">Queue Monitor</h1>
+  <ol class="breadcrumb mb-4">
+    <li class="breadcrumb-item"><a href="/admin/messaging">Admin Messaging</a></li>
+    <li class="breadcrumb-item active">Queue</li>
+  </ol>
+
+  <div class="card mb-4">
+    <div class="card-header"><i class="fas fa-layer-group me-1"></i>Queued Broadcasts</div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Priority</th>
+              <th>Type</th>
+              <th>Severity</th>
+              <th>Subject</th>
+              <th>TTL</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in queued_items %}
+            <tr>
+              <td>{{ b.id }}</td>
+              <td>{{ b.priority }}</td>
+              <td>{{ b.msg_type }}</td>
+              <td>{{ b.severity }}</td>
+              <td class="text-truncate" style="max-width: 360px;">{{ b.subject }}</td>
+              <td>{{ b.ttl_expires_at }}</td>
+              <td><a class="btn btn-sm btn-outline-primary" href="/admin/messaging/broadcasts/{{ b.id }}">Open</a></td>
+            </tr>
+            {% endfor %}
+            {% if queued_items|length == 0 %}
+            <tr><td colspan="7" class="text-muted">No queued broadcasts.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+      <div class="form-text">This list will be processed by the fog/IEEE 802.15.4 dispatcher later.</div>
+    </div>
+  </div>
+
+  <div class="card mb-4">
+    <div class="card-header"><i class="fas fa-file-lines me-1"></i>Drafts</div>
+    <div class="card-body">
+      <div class="table-responsive">
+        <table class="table table-sm table-striped align-middle">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>Type</th>
+              <th>Severity</th>
+              <th>Subject</th>
+              <th>Created</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for b in drafts %}
+            <tr>
+              <td>{{ b.id }}</td>
+              <td>{{ b.msg_type }}</td>
+              <td>{{ b.severity }}</td>
+              <td class="text-truncate" style="max-width: 360px;">{{ b.subject }}</td>
+              <td>{{ b.created_at }}</td>
+              <td><a class="btn btn-sm btn-outline-primary" href="/admin/messaging/broadcasts/{{ b.id }}">Open</a></td>
+            </tr>
+            {% endfor %}
+            {% if drafts|length == 0 %}
+            <tr><td colspan="6" class="text-muted">No drafts.</td></tr>
+            {% endif %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+</div>
+{% endblock %}
