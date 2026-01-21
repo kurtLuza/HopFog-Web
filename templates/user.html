@@ -2,69 +2,159 @@
 {% block title %}Users{% endblock %}
 {% block content %}
 
-<div class="card mb-4">
-    <div class="card-header">
-        <i class="fas fa-users me-1"></i>
-        List of Users
+<div class="container-fluid px-4">
+    <h1 class="mt-4">Users</h1>
+    <ol class="breadcrumb mb-4">
+        <li class="breadcrumb-item active">User Management</li>
+    </ol>
+
+    <!-- Create Mobile User Button -->
+    <div class="mb-4">
+        <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#createUserModal">
+            <i class="fas fa-user-plus me-2"></i>Create Mobile User
+        </button>
     </div>
-    <div class="card-body">
-        <table id="datatablesSimple">
-            <thead>
-                <tr>
-                    <th>ID</th>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Status</th>
-                    <th>Created At</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tfoot>
-                <tr>
-                    <th>ID</th>
-                    <th>Username</th>
-                    <th>Email</th>
-                    <th>Status</th>
-                    <th>Created At</th>
-                    <th>Actions</th>
-                </tr>
-            </tfoot>
-            <tbody>
-                {% for user in users %}
-                <tr>
-                    <td>{{ user.id }}</td>
-                    <td>{{ user.username }}</td>
-                    <td>{{ user.email }}</td>
-                    <td>
-                        {% if user.is_active %}
-                            <span class="badge bg-success">Active</span>
-                        {% else %}
-                            <span class="badge bg-secondary">Inactive</span>
-                        {% endif %}
-                    </td>
-                    <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else 'N/A' }}</td>
-                    <td>
-                        <button class="btn btn-sm btn-primary view-user-btn" data-user-id="{{ user.id }}">
-                            <i class="fas fa-eye"></i>
-                        </button>
-                        <button class="btn btn-sm btn-danger delete-user-btn" data-user-id="{{ user.id }}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                </tr>
-                {% else %}
-                <tr>
-                    <td colspan="6" style="text-align: center;">No users found</td>
-                </tr>
-                {% endfor %}
-            </tbody>
-        </table>
+
+    <div class="card mb-4">
+        <div class="card-header">
+            <i class="fas fa-users me-1"></i>
+            List of Users
+        </div>
+        <div class="card-body">
+            <table id="datatablesSimple">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tfoot>
+                    <tr>
+                        <th>ID</th>
+                        <th>Username</th>
+                        <th>Email</th>
+                        <th>Role</th>
+                        <th>Status</th>
+                        <th>Created At</th>
+                        <th>Actions</th>
+                    </tr>
+                </tfoot>
+                <tbody>
+                    {% for user in users %}
+                    <tr>
+                        <td>{{ user.id }}</td>
+                        <td>{{ user.username }}</td>
+                        <td>
+                            {% set email_parts = user.email.split('@') %}
+                            {% set local_part = email_parts[0] %}
+                            {% set domain = email_parts[1] if email_parts|length > 1 else '' %}
+                            {% if local_part|length <= 2 %}
+                                {{ local_part[0] }}***@{{ domain }}
+                            {% else %}
+                                {{ local_part[:2] }}***{{ local_part[-1] }}@{{ domain }}
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.role == 'admin' %}
+                                <span class="badge bg-primary"><i class="fas fa-shield-alt"></i> Admin</span>
+                            {% else %}
+                                <span class="badge bg-info"><i class="fas fa-mobile-alt"></i> Mobile</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if user.is_active %}
+                                <span class="badge bg-success">Active</span>
+                            {% else %}
+                                <span class="badge bg-secondary">Inactive</span>
+                            {% endif %}
+                        </td>
+                        <td>{{ user.created_at.strftime('%Y-%m-%d %H:%M') if user.created_at else 'N/A' }}</td>
+                        <td>
+                            <button class="btn btn-sm btn-primary view-user-btn" data-user-id="{{ user.id }}" title="View User">
+                                <i class="fas fa-eye"></i>
+                            </button>
+                            {% if user.role != 'admin' %}
+                                {% if user.is_active %}
+                                    <button class="btn btn-sm btn-warning toggle-status-btn" 
+                                            data-user-id="{{ user.id }}" 
+                                            data-current-status="active"
+                                            title="Deactivate User">
+                                        <i class="fas fa-user-slash"></i>
+                                    </button>
+                                {% else %}
+                                    <button class="btn btn-sm btn-success toggle-status-btn" 
+                                            data-user-id="{{ user.id }}" 
+                                            data-current-status="inactive"
+                                            title="Activate User">
+                                        <i class="fas fa-user-check"></i>
+                                    </button>
+                                {% endif %}
+                            {% else %}
+                                <button class="btn btn-sm btn-secondary" disabled title="Cannot modify admin status">
+                                    <i class="fas fa-lock"></i>
+                                </button>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="7" class="text-center">No users found</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- Create Mobile User Modal -->
+<div class="modal fade" id="createUserModal" tabindex="-1" aria-labelledby="createUserModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="createUserModalLabel">
+                    <i class="fas fa-user-plus me-2"></i>Create Mobile User
+                </h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form id="createUserForm">
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label for="username" class="form-label">Username</label>
+                        <input type="text" class="form-control" id="username" name="username" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="email" class="form-label">Email</label>
+                        <input type="email" class="form-control" id="email" name="email" required>
+                    </div>
+                    <div class="mb-3">
+                        <label for="password" class="form-label">Password</label>
+                        <input type="password" class="form-control" id="password" name="password" required minlength="6">
+                    </div>
+                    <div class="mb-3">
+                        <label for="confirmPassword" class="form-label">Confirm Password</label>
+                        <input type="password" class="form-control" id="confirmPassword" name="confirmPassword" required minlength="6">
+                    </div>
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle me-2"></i>
+                        This will create a <strong>Mobile</strong> user who can only log in via the mobile app.
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                    <button type="submit" class="btn btn-primary">Create User</button>
+                </div>
+            </form>
+        </div>
     </div>
 </div>
 
 {% endblock %}
-
-# ...existing code...
 
 {% block extra_js %}
 <script src="https://cdn.jsdelivr.net/npm/simple-datatables@7.1.2/dist/umd/simple-datatables.min.js" crossorigin="anonymous"></script>
@@ -75,18 +165,66 @@
         new simpleDatatables.DataTable(dataTable);
     }
 
-    // View user buttons
+    // Create Mobile User Form
+    document.getElementById('createUserForm').addEventListener('submit', function(e) {
+        e.preventDefault();
+        
+        const username = document.getElementById('username').value;
+        const email = document.getElementById('email').value;
+        const password = document.getElementById('password').value;
+        const confirmPassword = document.getElementById('confirmPassword').value;
+        
+        if (password !== confirmPassword) {
+            alert('Passwords do not match!');
+            return;
+        }
+        
+        const formData = new FormData();
+        formData.append('username', username);
+        formData.append('email', email);
+        formData.append('password', password);
+        
+        fetch('/api/admin/create-mobile-user', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (!response.ok) {
+                return response.json().then(err => { throw err; });
+            }
+            return response.json();
+        })
+        .then(data => {
+            alert('Mobile user created successfully!');
+            window.location.reload();
+        })
+        .catch(error => {
+            alert('Error creating user: ' + (error.detail || error.message || error));
+        });
+    });
+
+    // View and Toggle Status buttons
     document.addEventListener('click', function(e) {
+        // View User
         if (e.target.closest('.view-user-btn')) {
             const userId = e.target.closest('.view-user-btn').getAttribute('data-user-id');
             alert('View user details for ID: ' + userId);
         }
         
-        if (e.target.closest('.delete-user-btn')) {
-            const userId = e.target.closest('.delete-user-btn').getAttribute('data-user-id');
-            if (confirm('Are you sure you want to delete this user?')) {
-                fetch(`/api/users/${userId}`, {
-                    method: 'DELETE',
+        // Toggle User Status (Activate/Deactivate)
+        if (e.target.closest('.toggle-status-btn')) {
+            const btn = e.target.closest('.toggle-status-btn');
+            const userId = btn.getAttribute('data-user-id');
+            const currentStatus = btn.getAttribute('data-current-status');
+            
+            const action = currentStatus === 'active' ? 'deactivate' : 'activate';
+            const confirmMsg = currentStatus === 'active' 
+                ? 'Are you sure you want to deactivate this user? They will not be able to log in.'
+                : 'Are you sure you want to activate this user? They will be able to log in again.';
+            
+            if (confirm(confirmMsg)) {
+                fetch(`/api/users/${userId}/toggle-status`, {
+                    method: 'PUT',
                 })
                 .then(response => {
                     if (!response.ok) {
@@ -95,11 +233,11 @@
                     return response.json();
                 })
                 .then(data => {
-                    alert('User deleted successfully!');
+                    alert(`User ${action}d successfully!`);
                     window.location.reload();
                 })
                 .catch(error => {
-                    alert('Error deleting user: ' + (error.detail || error.message || error));
+                    alert('Error: ' + (error.detail || error.message || error));
                 });
             }
         }
