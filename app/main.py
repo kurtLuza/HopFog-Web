@@ -43,6 +43,7 @@ def login_page(request: Request):
 
 @app.post("/login")
 async def login(
+    request: Request,
     email: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db)
@@ -56,11 +57,20 @@ async def login(
     
     if not user:
         print(f"User not found!")
-        raise HTTPException(status_code=401, detail="Invalid email or password")
-    
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": "Invalid email or password"
+        })    
     print(f"User found: {user.username}")
     print(f"Stored hash: {user.password_hash}")
     print(f"Hash type: {type(user.password_hash)}")
+
+    if user.role != "admin":
+        print(f"User is not an admin, role: {user.role}")
+        return templates.TemplateResponse("login.html", {
+            "request": request,
+            "error": "This account is not authorized for web access. Please use the mobile app."
+        })
     
     # Manual verification test
     try:
@@ -90,45 +100,48 @@ async def login(
     response.set_cookie(key="access_token", value=f"Bearer {token}", httponly=True)
     return response
 
+
+
+
+
 @app.get("/register", response_class=HTMLResponse)
 def register(request: Request):
     return templates.TemplateResponse("register.html", {"request": request})
 
 @app.post("/register")
-async def register_user(
-    email: str = Form(...),
+def register(
+    request: Request,
     username: str = Form(...),
+    email: str = Form(...),
     password: str = Form(...),
     db: Session = Depends(get_db)
 ):
-    print(f"DEBUG - Registering user:")
-    print(f"  Email: {email}")
-    print(f"  Username: {username}")
-    print(f"  Password length: {len(password)} chars, {len(password.encode('utf-8'))} bytes")
-    # Check if email already exists
-    existing_user = db.query(User).filter(User.email == email).first()
-    if existing_user:
-        raise HTTPException(status_code=400, detail="Email already registered")
+    # Check if email exists
+    if db.query(User).filter(User.email == email).first():
+        return templates.TemplateResponse("register.html", {
+            "request": request,
+            "error": "Email already registered"
+        })
     
-    # Check if username already exists
-    existing_username = db.query(User).filter(User.username == username).first()
-    if existing_username:
-        raise HTTPException(status_code=400, detail="Username already taken")
+    # Check if username exists
+    if db.query(User).filter(User.username == username).first():
+        return templates.TemplateResponse("register.html", {
+            "request": request,
+            "error": "Username already taken"
+        })
     
-    # Hash the password (NOT the SECRET_KEY!)
-    hashed_password = get_password_hash(password)
-    print(f"  Hashed password successfully")
-    
-      # Create new user
+    # Create user with admin role (web registration = admin)
     new_user = User(
-        email=email,
         username=username,
-        password_hash=hashed_password
+        email=email,
+        password_hash=get_password_hash(password),
+        role="admin",  # Web users are admins
+        is_active=True
     )
+    
     db.add(new_user)
     db.commit()
-
-    print(f"  User created successfully with ID: {new_user.id}")
+    
     return RedirectResponse(url="/?registered=true", status_code=302)
 
 @app.get("/dashboard", response_class=HTMLResponse)
@@ -237,25 +250,6 @@ def delete_message(message_id: int, db: Session = Depends(get_db)):
         return {"message": "Message deleted successfully"}
     return {"error": "Message not found"}
 
-
-@app.delete("/api/users/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(verify_token)):
-    # Find the user
-    user = db.query(User).filter(User.id == user_id).first()
-    
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-    
-    # Prevent deleting yourself
-    if user.id == current_user.id:
-        raise HTTPException(status_code=400, detail="Cannot delete your own account")
-    
-    # Delete the user
-    db.delete(user)
-    db.commit()
-    
-    return {"message": "User deleted successfully"}
-
 # @app.get("/debug/users")
 # def debug_users(db: Session = Depends(get_db)):
 #     users = db.query(User).all()
@@ -265,6 +259,7 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User 
 #         "username": user.username,
 #         "created_at": user.created_at
 #     } for user in users]
+
 
 @app.get("/fog_nodes", response_class=HTMLResponse)
 def fog_nodes(request: Request, db: Session = Depends(get_db), current_user: User = Depends(verify_token)):
@@ -308,47 +303,35 @@ def settings(request: Request, db: Session = Depends(get_db), current_user: User
     })
 
 
-@app.post("/settings/update", response_class=HTMLResponse)
-async def update_settings(
+@app.post("/settings/change-password", response_class=HTMLResponse)
+async def change_password(
     request: Request,
-    username: str = Form(...),
-    email: str = Form(...),
+    current_password: str = Form(...),
+    new_password: str = Form(...),
+    confirm_password: str = Form(...),
     db: Session = Depends(get_db),
     current_user: User = Depends(verify_token)
 ):
     error = None
     success = None
-    old_email = current_user.email
     
-    # Check if email is already taken by another user
-    existing_user = db.query(User).filter(User.email == email, User.id != current_user.id).first()
-    if existing_user:
-        error = "Email already in use"
+    # Check if new passwords match
+    if new_password != confirm_password:
+        error = "New passwords do not match"
     
-    # Check if username is already taken by another user
-    existing_username = db.query(User).filter(User.username == username, User.id != current_user.id).first()
-    if existing_username:
-        error = "Username already taken"
+    # Verify current password
+    elif not verify_password(current_password, current_user.password_hash):
+        error = "Current password is incorrect"
     
-    if not error:
-        # Update user
-        current_user.username = username
-        current_user.email = email
+    # Check minimum length
+    elif len(new_password) < 6:
+        error = "New password must be at least 6 characters"
+    
+    else:
+        # Update password
+        current_user.password_hash = get_password_hash(new_password)
         db.commit()
-        db.refresh(current_user)
-        success = "Profile updated successfully!"
-        
-        # If email changed, create new token and update cookie
-        if email != old_email:
-            new_token = create_access_token(data={"sub": email})
-            response = templates.TemplateResponse("settings.html", {
-                "request": request,
-                "current_user": current_user,
-                "success": success,
-                "error": error
-            })
-            response.set_cookie(key="access_token", value=f"Bearer {new_token}", httponly=True)
-            return response
+        success = "Password changed successfully!"
     
     return templates.TemplateResponse("settings.html", {
         "request": request,
@@ -356,5 +339,131 @@ async def update_settings(
         "success": success,
         "error": error
     })
+
+
+
+# Mobile Login API
+@app.post("/api/mobile/login")
+def mobile_login(
+    email: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    # Find user
+    user = db.query(User).filter(User.email == email).first()
+    
+    if not user:
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    # Check if user is a mobile user
+    if user.role != "mobile":
+        raise HTTPException(status_code=403, detail="This account is not authorized for mobile access")
+    
+    # Verify password - FIXED: use password_hash
+    if not verify_password(password, user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+    
+    # Check if active
+    if not user.is_active:
+        raise HTTPException(status_code=403, detail="Account is inactive")
+    
+    # Create token
+    access_token = create_access_token(data={"sub": user.email, "role": "mobile"})
+    
+    return {
+        "access_token": access_token,
+        "token_type": "bearer",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role
+        }
+    }
+
+# Web Admin - Create Mobile User
+@app.post("/api/admin/create-mobile-user")
+def create_mobile_user(
+    username: str = Form(...),
+    email: str = Form(...),
+    password: str = Form(...),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(verify_token)
+):
+    # Only admins can create mobile users
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can create mobile users")
+    
+    # Check if email exists
+    if db.query(User).filter(User.email == email).first():
+        raise HTTPException(status_code=400, detail="Email already registered")
+    
+    # Check if username exists
+    if db.query(User).filter(User.username == username).first():
+        raise HTTPException(status_code=400, detail="Username already taken")
+    
+    # Create user with mobile role
+    new_user = User(
+        username=username,
+        email=email,
+        password_hash=get_password_hash(password),
+        role="mobile",
+        is_active=True
+    )
+    
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    
+    return {
+        "message": "Mobile user created successfully",
+        "user": {
+            "id": new_user.id,
+            "username": new_user.username,
+            "email": new_user.email,
+            "role": new_user.role
+        }
+    }
+
+# Toggle User Status (Activate/Deactivate)
+@app.put("/api/users/{user_id}/toggle-status")
+def toggle_user_status(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(verify_token)
+):
+    # Only admins can toggle user status
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Only admins can modify user status")
+    
+    # Find the user
+    user = db.query(User).filter(User.id == user_id).first()
+    
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+    
+    # Prevent modifying admin users
+    if user.role == "admin":
+        raise HTTPException(status_code=400, detail="Cannot modify admin user status")
+    
+    # Prevent deactivating yourself
+    if user.id == current_user.id:
+        raise HTTPException(status_code=400, detail="Cannot modify your own status")
+    
+    # Toggle the status
+    user.is_active = not user.is_active
+    db.commit()
+    
+    status = "activated" if user.is_active else "deactivated"
+    
+    return {
+        "message": f"User {status} successfully",
+        "user": {
+            "id": user.id,
+            "username": user.username,
+            "is_active": user.is_active
+        }
+    }
+
 
 

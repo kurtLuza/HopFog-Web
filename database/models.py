@@ -20,6 +20,7 @@ class User(Base):
     username = Column(String(80), unique=True, nullable=True)
     password_hash = Column(String(255), nullable=False)  # store hash only
     is_active = Column(Integer, default=1, nullable=False)
+    role = Column(String, default="mobile")  # "admin" or "mobile"
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
 
     sent_messages = relationship("Message", back_populates="sender", foreign_keys="Message.sender_id", cascade="all, delete")
