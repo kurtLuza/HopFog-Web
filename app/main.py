@@ -467,3 +467,29 @@ def toggle_user_status(
 
 
 
+# Forgot Password - Simple Reset
+@app.post("/forgot-password")
+def forgot_password(
+    email: str = Form(...),
+    new_password: str = Form(...),
+    db: Session = Depends(get_db)
+):
+    # Find user by email
+    user = db.query(User).filter(User.email == email).first()
+    
+    if not user:
+        return {"success": False, "message": "No account found with this email address."}
+    
+    # Only allow admins to reset password via web
+    if user.role != "admin":
+        return {"success": False, "message": "Mobile users must contact an administrator to reset their password."}
+    
+    # Check password length
+    if len(new_password) < 6:
+        return {"success": False, "message": "Password must be at least 6 characters."}
+    
+    # Update password
+    user.password_hash = get_password_hash(new_password)
+    db.commit()
+    
+    return {"success": True, "message": "Password reset successfully! You can now log in."}
