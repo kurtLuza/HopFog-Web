@@ -24,6 +24,7 @@ from routes.xbee_api import router as xbee_router
 from services.broadcast_dispatcher import dispatcher
 
 from services.broadcast_dispatcher import dispatcher
+from services.xbee_service import xbee_service
 
 from dotenv import load_dotenv
 load_dotenv(override=True)
@@ -54,6 +55,24 @@ async def on_startup():
 @app.on_event("shutdown")
 async def on_shutdown():
     await dispatcher.stop()
+
+@app.on_event("startup")
+def open_xbee():
+    try:
+        xbee_service.open()
+        print("[XBee] Service opened on startup")
+    except Exception as e:
+        print(f"[XBee] Failed to open on startup: {e}")
+        print("[XBee] Web app will run without XBee — check COM port and connection")
+
+
+@app.on_event("shutdown")
+def close_xbee():
+    try:
+        xbee_service.close()
+        print("[XBee] Service closed on shutdown")
+    except Exception as e:
+        print(f"[XBee] Error closing: {e}")
 
 @app.get("/", response_class=HTMLResponse)
 def login_page(request: Request):
